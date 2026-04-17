@@ -20,20 +20,20 @@ def webhook():
         hydrant_gid = attrs.get('hydrant_globalid')
         inservice_val = str(attrs.get('inservice_temp'))
 
+        print("hydrant_gid:", hydrant_gid)
         print("inservice_val:", inservice_val)
-      
+
         if not hydrant_gid:
             return "Missing GlobalID", 400
 
-        # ensure correct GUID format
+        # ensure GUID format
         if not hydrant_gid.startswith("{"):
             hydrant_gid = "{" + hydrant_gid + "}"
 
-        # convert values
-       if inservice_val == "0":
-            inservice = 0   # Yes
+        if inservice_val == "0":
+            inservice = 0
         elif inservice_val == "1":
-            inservice = 1   # No
+            inservice = 1
         else:
             return f"Invalid value: {inservice_val}", 400
 
@@ -49,6 +49,8 @@ def webhook():
         }
 
         r = requests.post(FEATURE_LAYER_URL, data=payload)
+
+        print("ArcGIS response:", r.text)
 
         return jsonify(r.json())
 

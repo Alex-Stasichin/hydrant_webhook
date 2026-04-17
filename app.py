@@ -15,7 +15,12 @@ print(ITEM_ID)
 # enterprise portal
 gis = GIS("https://gis.hempsteadwatermaps.com/portal", USERNAME, PASSWORD)
 
-layer = gis.content.get(ITEM_ID).layers[0]
+item = gis.content.get(ITEM_ID)
+
+if item is None:
+    raise Exception("Item not found. Check ITEM_ID and permissions.")
+
+layer = item.layers[0]
 
 @app.route('/webhook', methods=['POST'])
 def webhook():

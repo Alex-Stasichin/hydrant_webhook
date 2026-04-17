@@ -18,11 +18,10 @@ def webhook():
         print("ATTRIBUTES:", attrs)
 
         hydrant_gid = attrs.get('hydrant_globalid')
-        inservice_val = attrs.get('inservice_temp')
+        inservice_val = str(attrs.get('inservice_temp'))
 
-        print("hydrant_gid:", hydrant_gid)        
         print("inservice_val:", inservice_val)
-        
+      
         if not hydrant_gid:
             return "Missing GlobalID", 400
 
@@ -31,12 +30,12 @@ def webhook():
             hydrant_gid = "{" + hydrant_gid + "}"
 
         # convert values
-        if inservice_val == "Yes":
-            inservice = 1
-        elif inservice_val == "No":
-            inservice = 0
+       if inservice_val == "0":
+            inservice = 0   # Yes
+        elif inservice_val == "1":
+            inservice = 1   # No
         else:
-            return "Invalid value", 400
+            return f"Invalid value: {inservice_val}", 400
 
         payload = {
             "f": "json",

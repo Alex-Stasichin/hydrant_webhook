@@ -15,10 +15,14 @@ def webhook():
         feature = data['feature']
         attrs = feature['attributes']
 
-        # 👇 correct field (from inspection table)
+        print("ATTRIBUTES:", attrs)
+
         hydrant_gid = attrs.get('hydrant_globalid')
         inservice_val = attrs.get('inservice_temp')
 
+        print("hydrant_gid:", hydrant_gid)        
+        print("inservice_val:", inservice_val)
+        
         if not hydrant_gid:
             return "Missing GlobalID", 400
 

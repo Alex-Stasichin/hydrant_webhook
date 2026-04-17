@@ -37,14 +37,14 @@ def webhook():
         inservice = int(inservice_val)
 
         # -----------------------------------
-        # STEP 1: QUERY for OBJECTID
+        # STEP 1: QUERY for objectid (lowercase)
         # -----------------------------------
         query_url = FEATURE_LAYER_URL.replace("/applyEdits", "/query")
 
         query_params = {
             "f": "json",
             "where": f"globalid='{hydrant_gid}'",
-            "outFields": "OBJECTID",
+            "outFields": "objectid",
             "returnGeometry": "false",
             "token": TOKEN
         }
@@ -59,18 +59,18 @@ def webhook():
         if not features:
             return "Hydrant not found", 404
 
-        objectid = features[0]["attributes"]["OBJECTID"]
+        objectid = features[0]["attributes"]["objectid"]
 
-        print("OBJECTID:", objectid)
+        print("objectid:", objectid)
 
         # -----------------------------------
-        # STEP 2: UPDATE using OBJECTID
+        # STEP 2: UPDATE using objectid (lowercase)
         # -----------------------------------
         payload = {
             "f": "json",
             "updates": [{
                 "attributes": {
-                    "OBJECTID": objectid,
+                    "objectid": objectid,
                     "inservice": inservice
                 }
             }],

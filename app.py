@@ -1,26 +1,11 @@
-import os
 from flask import Flask, request, jsonify
-from arcgis.gis import GIS
+import requests
+import os
 
 app = Flask(__name__)
 
-USERNAME = os.environ.get("AGOL_USERNAME")
-PASSWORD = os.environ.get("AGOL_PASSWORD")
-ITEM_ID = os.environ.get("HYDRANT_ITEM_ID")
-
-#checking to see if its actually working
-print("USERNAME:", USERNAME)
-print("ITEM_ID:", ITEM_ID)
-
-# enterprise portal
-gis = GIS("https://gis.hempsteadwatermaps.com/portal", USERNAME, PASSWORD)
-
-item = gis.content.get(ITEM_ID)
-
-if item is None:
-    raise Exception("Item not found. Check ITEM_ID and permissions.")
-
-layer = item.layers[0]
+FEATURE_LAYER_URL = "https://gis.hempsteadwatermaps.com/server/rest/services/Hosted/Hydrant_Publishing_gdb/FeatureServer/0/applyEdits"
+TOKEN = os.environ.get("AGOL_TOKEN")  # store token securely
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -30,16 +15,18 @@ def webhook():
         feature = data['feature']
         attrs = feature['attributes']
 
+        # 👇 correct field (from inspection table)
         hydrant_gid = attrs.get('hydrant_globalid')
-
-        if hydrant_gid and not hydrant_gid.startswith("{"):
-            hydrant_gid = "{" + hydrant_gid + "}"
-            
         inservice_val = attrs.get('inservice_temp')
 
         if not hydrant_gid:
             return "Missing GlobalID", 400
 
+        # ensure correct GUID format
+        if not hydrant_gid.startswith("{"):
+            hydrant_gid = "{" + hydrant_gid + "}"
+
+        # convert values
         if inservice_val == "Yes":
             inservice = 1
         elif inservice_val == "No":
@@ -47,17 +34,24 @@ def webhook():
         else:
             return "Invalid value", 400
 
-        layer.edit_features(updates=[{
-            "attributes": {
-                "globalid": hydrant_gid,
-                "inservice": inservice
-            }
-        }])
+        payload = {
+            "f": "json",
+            "updates": [{
+                "attributes": {
+                    "globalid": hydrant_gid,
+                    "inservice": inservice
+                }
+            }],
+            "token": TOKEN
+        }
 
-        return jsonify({"status": "success"})
+        r = requests.post(FEATURE_LAYER_URL, data=payload)
+
+        return jsonify(r.json())
 
     except Exception as e:
         return str(e), 500
+
 
 if __name__ == "__main__":
     app.run()

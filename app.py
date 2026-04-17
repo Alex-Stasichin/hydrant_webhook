@@ -25,7 +25,11 @@ def webhook():
         feature = data['feature']
         attrs = feature['attributes']
 
-        hydrant_gid = attrs.get('globalid')
+        hydrant_gid = attrs.get('hydrant_globalid')
+
+        if hydrant_gid and not hydrant_gid.startswith("{"):
+            hydrant_gid = "{" + hydrant_gid + "}"
+            
         inservice_val = attrs.get('inservice_temp')
 
         if not hydrant_gid:

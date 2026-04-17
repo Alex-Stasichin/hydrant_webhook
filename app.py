@@ -1,10 +1,17 @@
+import os
 from flask import Flask, request, jsonify
-import requests
+from arcgis.gis import GIS
 
 app = Flask(__name__)
 
-FEATURE_LAYER_URL = "https://gis.hempsteadwatermaps.com/server/rest/services/Hosted/Hydrant_Publishing_gdb/FeatureServer/0/applyEdits"
-TOKEN = "YOUR_TOKEN_HERE"
+USERNAME = os.environ.get("AGOL_USERNAME")
+PASSWORD = os.environ.get("AGOL_PASSWORD")
+ITEM_ID = os.environ.get("HYDRANT_ITEM_ID")
+
+# enterprise portal
+gis = GIS("https://gis.hempsteadwatermaps.com/portal", USERNAME, PASSWORD)
+
+layer = gis.content.get(ITEM_ID).layers[0]
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -20,7 +27,6 @@ def webhook():
         if not hydrant_gid:
             return "Missing GlobalID", 400
 
-        # Convert value
         if inservice_val == "Yes":
             inservice = 1
         elif inservice_val == "No":
@@ -28,20 +34,14 @@ def webhook():
         else:
             return "Invalid value", 400
 
-        payload = {
-            "f": "json",
-            "updates": [{
-                "attributes": {
-                    "globalid": hydrant_gid,
-                    "inservice": inservice
-                }
-            }],
-            "token": TOKEN
-        }
+        layer.edit_features(updates=[{
+            "attributes": {
+                "globalid": hydrant_gid,
+                "inservice": inservice
+            }
+        }])
 
-        r = requests.post(FEATURE_LAYER_URL, data=payload)
-
-        return jsonify(r.json())
+        return jsonify({"status": "success"})
 
     except Exception as e:
         return str(e), 500

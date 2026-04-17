@@ -8,6 +8,10 @@ USERNAME = os.environ.get("AGOL_USERNAME")
 PASSWORD = os.environ.get("AGOL_PASSWORD")
 ITEM_ID = os.environ.get("HYDRANT_ITEM_ID")
 
+#checking to see if its actually working
+print(USERNAME)
+print(ITEM_ID)
+
 # enterprise portal
 gis = GIS("https://gis.hempsteadwatermaps.com/portal", USERNAME, PASSWORD)
 

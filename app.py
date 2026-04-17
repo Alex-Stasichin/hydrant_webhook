@@ -72,7 +72,7 @@ def webhook():
             "f": "json",
             "updates": [{
                 "attributes": {
-                    "objectid": objectid,
+                    "OBJECTID": objectid,
                     "inservice": inservice
                 }
             }],

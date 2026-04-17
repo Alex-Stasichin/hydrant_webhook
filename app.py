@@ -21,7 +21,7 @@ def webhook():
         feature = data['feature']
         attrs = feature['attributes']
 
-        hydrant_gid = attrs.get('hydrant_globalid')
+        hydrant_gid = attrs.get('globalid')
         inservice_val = attrs.get('inservice_temp')
 
         if not hydrant_gid:

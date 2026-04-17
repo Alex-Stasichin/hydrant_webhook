@@ -4,7 +4,7 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-FEATURE_LAYER_URL = os.environ.get("FEATURE_LAYER_URL")  # hydrant layer /applyEdits
+FEATURE_LAYER_URL = os.environ.get("FEATURE_LAYER_URL")  # must end in /applyEdits
 TOKEN = os.environ.get("AGOL_TOKEN")
 
 @app.route('/webhook', methods=['POST'])
@@ -33,14 +33,44 @@ def webhook():
         if not hydrant_gid.startswith("{"):
             hydrant_gid = "{" + hydrant_gid + "}"
 
-        # convert to int just in case
+        # convert to int
         inservice = int(inservice_val)
 
+        # -----------------------------------
+        # STEP 1: QUERY for OBJECTID
+        # -----------------------------------
+        query_url = FEATURE_LAYER_URL.replace("/applyEdits", "/query")
+
+        query_params = {
+            "f": "json",
+            "where": f"globalid='{hydrant_gid}'",
+            "outFields": "OBJECTID",
+            "returnGeometry": "false",
+            "token": TOKEN
+        }
+
+        query_response = requests.get(query_url, params=query_params)
+        query_json = query_response.json()
+
+        print("Query response:", query_json)
+
+        features = query_json.get("features")
+
+        if not features:
+            return "Hydrant not found", 404
+
+        objectid = features[0]["attributes"]["OBJECTID"]
+
+        print("OBJECTID:", objectid)
+
+        # -----------------------------------
+        # STEP 2: UPDATE using OBJECTID
+        # -----------------------------------
         payload = {
             "f": "json",
             "updates": [{
                 "attributes": {
-                    "globalid": hydrant_gid,
+                    "OBJECTID": objectid,
                     "inservice": inservice
                 }
             }],
@@ -54,4 +84,9 @@ def webhook():
         return jsonify(r.json())
 
     except Exception as e:
+        print("ERROR:", str(e))
         return str(e), 500
+
+
+if __name__ == "__main__":
+    app.run()

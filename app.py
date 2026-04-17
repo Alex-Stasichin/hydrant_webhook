@@ -33,18 +33,17 @@ def webhook():
         if not hydrant_gid.startswith("{"):
             hydrant_gid = "{" + hydrant_gid + "}"
 
-        # convert to int
         inservice = int(inservice_val)
 
         # -----------------------------------
-        # STEP 1: QUERY for OBJECTID (UPPERCASE)
+        # STEP 1: QUERY using lowercase objectid
         # -----------------------------------
         query_url = FEATURE_LAYER_URL.replace("/applyEdits", "/query")
 
         query_params = {
             "f": "json",
             "where": f"globalid='{hydrant_gid}'",
-            "outFields": "OBJECTID",   # 👈 IMPORTANT
+            "outFields": "objectid",
             "returnGeometry": "false",
             "token": TOKEN
         }
@@ -54,15 +53,17 @@ def webhook():
 
         print("Query response:", query_json)
 
+        if "error" in query_json:
+            return jsonify(query_json), 500
+
         features = query_json.get("features")
 
         if not features:
             return "Hydrant not found", 404
 
-        # 👇 pull OBJECTID from response
-        objectid = features[0]["attributes"]["OBJECTID"]
+        objectid = features[0]["attributes"]["objectid"]
 
-        print("OBJECTID (from query):", objectid)
+        print("objectid:", objectid)
 
         # -----------------------------------
         # STEP 2: UPDATE using lowercase objectid
@@ -71,7 +72,7 @@ def webhook():
             "f": "json",
             "updates": [{
                 "attributes": {
-                    "objectid": objectid,   # 👈 lowercase here
+                    "objectid": objectid,
                     "inservice": inservice
                 }
             }],

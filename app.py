@@ -1,5 +1,6 @@
 import os
 import requests
+import json
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
@@ -36,7 +37,7 @@ def webhook():
         inservice = int(inservice_val)
 
         # -----------------------------------
-        # STEP 1: QUERY using lowercase objectid
+        # STEP 1: QUERY (optional debug)
         # -----------------------------------
         query_url = FEATURE_LAYER_URL.replace("/applyEdits", "/query")
 
@@ -62,27 +63,27 @@ def webhook():
             return "Hydrant not found", 404
 
         objectid = features[0]["attributes"]["objectid"]
-
         print("objectid:", objectid)
 
         # -----------------------------------
-        # STEP 2: UPDATE using lowercase objectid
+        # STEP 2: UPDATE (FIXED JSON PAYLOAD)
         # -----------------------------------
         payload = {
             "f": "json",
-            "updates": [{
+            "updates": json.dumps([{
                 "attributes": {
                     "globalid": hydrant_gid,
                     "inservice": inservice
                 }
-            }],
+            }]),
             "useGlobalIds": "true",
-            "rollbackOnFailure": "true", 
+            "rollbackOnFailure": "true",
             "token": TOKEN
         }
 
         r = requests.post(FEATURE_LAYER_URL, data=payload)
 
+        print("STATUS:", r.status_code)
         print("ArcGIS response:", r.text)
 
         return jsonify(r.json())

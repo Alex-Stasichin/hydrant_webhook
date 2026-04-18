@@ -72,10 +72,11 @@ def webhook():
             "f": "json",
             "updates": [{
                 "attributes": {
-                    "OBJECTID": objectid,
+                    "globalid": hydrant_gid,
                     "inservice": inservice
                 }
             }],
+            "useGlobalIds": "true",
             "rollbackOnFailure": "true", 
             "token": TOKEN
         }

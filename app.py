@@ -76,6 +76,7 @@ def webhook():
                     "inservice": inservice
                 }
             }],
+            "rollbackOnFailure": "true", 
             "token": TOKEN
         }
 

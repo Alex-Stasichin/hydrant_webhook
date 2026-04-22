@@ -6,13 +6,44 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 FEATURE_LAYER_URL = os.environ.get("FEATURE_LAYER_URL")  # must end in /applyEdits
-TOKEN = os.environ.get("AGOL_TOKEN")
+
+PORTAL_URL = os.environ.get("PORTAL_URL")  # e.g. https://gis.hempsteadwatermaps.com/portal
+USERNAME = os.environ.get("AGOL_USERNAME")
+PASSWORD = os.environ.get("AGOL_PASSWORD")
+
+
+# -----------------------------------
+# 🔑 FUNCTION: Generate Token
+# -----------------------------------
+def generate_token():
+    token_url = f"{PORTAL_URL}/sharing/rest/generateToken"
+
+    payload = {
+        "username": USERNAME,
+        "password": PASSWORD,
+        "referer": "https://www.arcgis.com",
+        "f": "json",
+        "expiration": 60
+    }
+
+    r = requests.post(token_url, data=payload)
+    token_json = r.json()
+
+    print("TOKEN RESPONSE:", token_json)
+
+    return token_json.get("token")
+
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
     data = request.json
 
     try:
+        token = generate_token()
+
+        if not token:
+            return "Failed to generate token", 500
+
         feature = data['feature']
         attrs = feature['attributes']
 
@@ -37,7 +68,7 @@ def webhook():
         inservice = int(inservice_val)
 
         # -----------------------------------
-        # STEP 1: QUERY (optional debug)
+        # STEP 1: QUERY (debug + validation)
         # -----------------------------------
         query_url = FEATURE_LAYER_URL.replace("/applyEdits", "/query")
 
@@ -46,7 +77,7 @@ def webhook():
             "where": f"globalid='{hydrant_gid}'",
             "outFields": "objectid",
             "returnGeometry": "false",
-            "token": TOKEN
+            "token": token
         }
 
         query_response = requests.get(query_url, params=query_params)
@@ -66,7 +97,7 @@ def webhook():
         print("objectid:", objectid)
 
         # -----------------------------------
-        # STEP 2: UPDATE (FIXED JSON PAYLOAD)
+        # STEP 2: UPDATE using GlobalID
         # -----------------------------------
         payload = {
             "f": "json",
@@ -78,7 +109,7 @@ def webhook():
             }]),
             "useGlobalIds": "true",
             "rollbackOnFailure": "true",
-            "token": TOKEN
+            "token": token
         }
 
         r = requests.post(FEATURE_LAYER_URL, data=payload)
